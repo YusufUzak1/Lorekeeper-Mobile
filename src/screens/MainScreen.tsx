@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useUniverseStore } from '../store/useUniverseStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { BookOpen, Users, Map, Clock, ArrowLeft, Scroll, Sparkles, ChevronRight } from 'lucide-react-native';
+import { BookOpen, Users, Map, Clock, ArrowLeft, Scroll, Sparkles, ChevronRight, Globe } from 'lucide-react-native';
 import { StatCard } from '../components/StatCard';
 
 export function MainScreen() {
@@ -35,6 +35,7 @@ export function MainScreen() {
     { key: 'myth', label: 'Efsaneler', icon: Scroll, count: myths.length, screen: 'Mythology' },
     { key: 'time', label: 'Zaman Çizelgesi', icon: Clock, count: timeline.length, screen: 'Timeline' },
     { key: 'lore', label: 'Lore AI', icon: Sparkles, count: null, screen: 'Lore' },
+    { key: 'cosmos', label: 'Kosmos Haritası', icon: Globe, count: entities.length, screen: 'Cosmos' },
   ];
 
   return (
