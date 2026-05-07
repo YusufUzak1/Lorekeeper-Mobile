@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import './global.css';
 import { NavigationContainer, Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -8,8 +9,10 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import { View, ActivityIndicator } from 'react-native';
 
 import { AuthScreen } from './src/screens/AuthScreen';
-import { MainScreen } from './src/screens/MainScreen';
+import { UniverseSelectScreen } from './src/screens/UniverseSelectScreen';
+import { MainNavigator } from './src/navigation/MainNavigator';
 import { useAuthStore } from './src/store/useAuthStore';
+import { useUniverseStore } from './src/store/useUniverseStore';
 
 Amplify.configure({
   Auth: {
@@ -43,6 +46,7 @@ const DarkTheme: Theme = {
 
 export default function App() {
   const { isAuthenticated, login, logout } = useAuthStore();
+  const { currentUniverseId } = useUniverseStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -70,13 +74,26 @@ export default function App() {
     );
   }
 
+  // Akış: Auth → Evren Seçimi → Dashboard
+  const getActiveScreen = () => {
+    if (!isAuthenticated) return 'Auth';
+    if (!currentUniverseId) return 'UniverseSelect';
+    return 'Main';
+  };
+
+  const activeScreen = getActiveScreen();
+
   return (
     <NavigationContainer theme={DarkTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
-          <Stack.Screen name="Main" component={MainScreen} />
-        ) : (
+        {activeScreen === 'Auth' && (
           <Stack.Screen name="Auth" component={AuthScreen} />
+        )}
+        {activeScreen === 'UniverseSelect' && (
+          <Stack.Screen name="UniverseSelect" component={UniverseSelectScreen} />
+        )}
+        {activeScreen === 'Main' && (
+          <Stack.Screen name="Main" component={MainNavigator} />
         )}
       </Stack.Navigator>
       <StatusBar style="light" />

@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/useAuthStore';
 type Mode = 'login' | 'signup';
 
 export function AuthScreen() {
-  const { login } = useAuthStore();
+  const { login, loginAsGuest } = useAuthStore();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -163,6 +163,14 @@ export function AuthScreen() {
               disabled={loading}
             >
               {loading ? <ActivityIndicator color="#000" /> : <Text className="font-bold text-black uppercase">{mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}</Text>}
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              className="border border-mythos-border p-3 rounded-md items-center"
+              onPress={loginAsGuest}
+              disabled={loading}
+            >
+              <Text className="font-bold text-mythos-text uppercase">Misafir Olarak Devam Et</Text>
             </TouchableOpacity>
           </View>
         )}
