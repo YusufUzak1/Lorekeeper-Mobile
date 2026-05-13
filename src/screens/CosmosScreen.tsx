@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, PanResponder } from 'react-native';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber/native';
 import * as THREE from 'three';
 import { ArrowLeft, ZoomIn, ZoomOut } from 'lucide-react-native';
 import { useUniverseStore } from '../store/useUniverseStore';
