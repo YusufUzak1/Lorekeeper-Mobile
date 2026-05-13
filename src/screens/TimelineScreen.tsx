@@ -1,19 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, FlatList, TextInput, Alert } from 'react-native';
-import { Clock, Trash2 } from 'lucide-react-native';
+import { Clock, Trash2, Edit3, ArrowLeft } from 'lucide-react-native';
 import { useUniverseStore } from '../store/useUniverseStore';
 import { EmptyState } from '../components/EmptyState';
 
-export function TimelineScreen() {
-  const { getTimelineForCurrentUniverse, addTimelineEvent, deleteTimelineEvent, currentUniverseId } = useUniverseStore();
+export function TimelineScreen({ navigation }: any) {
+  const { getTimelineForCurrentUniverse, addTimelineEvent, updateTimelineEvent, deleteTimelineEvent, currentUniverseId } = useUniverseStore();
   const timeline = getTimelineForCurrentUniverse();
   const sorted = useMemo(() => [...timeline].sort((a, b) => a.position - b.position), [timeline]);
 
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [year, setYear] = useState('');
   const [era, setEra] = useState('');
   const [desc, setDesc] = useState('');
+
+  const resetForm = () => { setName(''); setYear(''); setEra(''); setDesc(''); setEditingId(null); setIsAdding(false); };
 
   const handleAdd = () => {
     if (!name.trim()) return;
@@ -23,7 +26,21 @@ export function TimelineScreen() {
       side: timeline.length % 2 === 0 ? 'above' : 'below',
       universeId: currentUniverseId || undefined,
     });
-    setName(''); setYear(''); setEra(''); setDesc(''); setIsAdding(false);
+    resetForm();
+  };
+
+  const handleEdit = (item: any) => {
+    setEditingId(item.id); setName(item.name); setYear(item.year || '');
+    setEra(item.era || ''); setDesc(item.description || ''); setIsAdding(true);
+  };
+
+  const handleUpdate = () => {
+    if (!editingId || !name.trim()) return;
+    updateTimelineEvent(editingId, {
+      name: name.trim(), year: year.trim(),
+      era: era.trim() || 'Bilinmeyen Çağ', description: desc.trim(),
+    });
+    resetForm();
   };
 
   const handleDelete = (id: string, n: string) => {
@@ -35,23 +52,25 @@ export function TimelineScreen() {
 
   return (
     <View className="flex-1 bg-mythos-bg pt-14 px-6">
-      <View className="flex-row justify-between items-center mb-6">
-        <Text className="text-mythos-text text-3xl font-bold">Zaman Çizelgesi</Text>
-        <TouchableOpacity onPress={() => setIsAdding(!isAdding)} className="bg-mythos-accent/20 px-4 py-2 rounded-lg border border-mythos-accent/40">
+      <View className="flex-row items-center mb-6">
+        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3"><ArrowLeft color="#8A8A8E" size={20} /></TouchableOpacity>
+        <Text className="text-mythos-text text-3xl font-bold flex-1">Zaman Çizelgesi</Text>
+        <TouchableOpacity onPress={() => { if (isAdding) resetForm(); else setIsAdding(true); }} className="bg-mythos-accent/20 px-4 py-2 rounded-lg border border-mythos-accent/40">
           <Text className="text-mythos-accent font-bold">{isAdding ? 'İptal' : 'Ekle'}</Text>
         </TouchableOpacity>
       </View>
 
       {isAdding && (
         <View className="bg-mythos-panel p-5 rounded-2xl border border-mythos-accent/30 mb-5">
+          <Text className="text-mythos-accent font-bold text-xs uppercase tracking-wider mb-3">{editingId ? '✏️ Olayı Düzenle' : '⏳ Yeni Olay'}</Text>
           <TextInput className="bg-black/30 border border-white/10 rounded-xl p-3 text-white mb-3" placeholder="Olay adı *" placeholderTextColor="#8A8A8E" value={name} onChangeText={setName} />
           <View className="flex-row gap-3 mb-3">
             <TextInput className="bg-black/30 border border-white/10 rounded-xl p-3 text-white flex-1" placeholder="Yıl" placeholderTextColor="#8A8A8E" value={year} onChangeText={setYear} />
             <TextInput className="bg-black/30 border border-white/10 rounded-xl p-3 text-white flex-1" placeholder="Çağ" placeholderTextColor="#8A8A8E" value={era} onChangeText={setEra} />
           </View>
           <TextInput className="bg-black/30 border border-white/10 rounded-xl p-3 text-white mb-4 h-20" placeholder="Açıklama" placeholderTextColor="#8A8A8E" multiline textAlignVertical="top" value={desc} onChangeText={setDesc} />
-          <TouchableOpacity className="bg-mythos-accent/80 p-3 rounded-xl items-center" onPress={handleAdd}>
-            <Text className="text-black font-bold uppercase">Oluştur</Text>
+          <TouchableOpacity className="bg-mythos-accent/80 p-3 rounded-xl items-center" onPress={editingId ? handleUpdate : handleAdd}>
+            <Text className="text-black font-bold uppercase">{editingId ? 'Güncelle' : 'Oluştur'}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -81,7 +100,10 @@ export function TimelineScreen() {
                       <Text className="text-white font-bold">{item.name}</Text>
                       {item.year ? <Text className="text-mythos-accent text-xs mt-0.5">{item.year}</Text> : null}
                     </View>
-                    <TouchableOpacity onPress={() => handleDelete(item.id, item.name)}><Trash2 color="#EF4444" size={14} /></TouchableOpacity>
+                    <View className="flex-row items-center gap-2">
+                      <TouchableOpacity onPress={() => handleEdit(item)}><Edit3 color="#C6A052" size={14} /></TouchableOpacity>
+                      <TouchableOpacity onPress={() => handleDelete(item.id, item.name)}><Trash2 color="#EF4444" size={14} /></TouchableOpacity>
+                    </View>
                   </View>
                   {item.description ? <Text className="text-mythos-text/70 text-sm mt-2">{item.description}</Text> : null}
                 </View>

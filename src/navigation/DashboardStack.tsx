@@ -5,6 +5,8 @@ import { MythologyScreen } from '../screens/MythologyScreen';
 import { TimelineScreen } from '../screens/TimelineScreen';
 import { LoreScreen } from '../screens/LoreScreen';
 import { CosmosScreen } from '../screens/CosmosScreen';
+import { MapsScreen } from '../screens/MapsScreen';
+import { LanguagesScreen } from '../screens/LanguagesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -16,6 +18,8 @@ export function DashboardStack() {
       <Stack.Screen name="Timeline" component={TimelineScreen} />
       <Stack.Screen name="Lore" component={LoreScreen} />
       <Stack.Screen name="Cosmos" component={CosmosScreen} />
+      <Stack.Screen name="Maps" component={MapsScreen} />
+      <Stack.Screen name="Languages" component={LanguagesScreen} />
     </Stack.Navigator>
   );
 }

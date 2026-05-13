@@ -87,12 +87,23 @@ interface UniverseState {
   updateNote: (id: string, data: Partial<Omit<Note, 'id'>>) => void;
   deleteNote: (id: string) => void;
 
+  // ── Region CRUD ──
+  addRegion: (data: Omit<MapRegion, 'id'>) => MapRegion;
+  deleteRegion: (id: string) => void;
+
+  // ── Language CRUD ──
+  addLanguage: (data: Omit<Language, 'id'>) => Language;
+  updateLanguage: (id: string, data: Partial<Omit<Language, 'id'>>) => void;
+  deleteLanguage: (id: string) => void;
+
   // ── Universe-scoped Getters ──
   getEntitiesForCurrentUniverse: () => Entity[];
   getConnectionsForCurrentUniverse: () => Connection[];
   getMythsForCurrentUniverse: () => MythCard[];
   getTimelineForCurrentUniverse: () => TimelineEvent[];
   getNotesForCurrentUniverse: () => Note[];
+  getRegionsForCurrentUniverse: () => MapRegion[];
+  getLanguagesForCurrentUniverse: () => Language[];
 }
 
 // ── Varsayılan state ──
@@ -284,6 +295,33 @@ export const useUniverseStore = create<UniverseState>()(
           notes: s.notes.filter((n) => n.id !== id),
         })),
 
+      // ─── Region ─────────────────────────
+      addRegion: (data) => {
+        const universeId = get().currentUniverseId || undefined;
+        const newRegion: MapRegion = { id: uid(), universeId, ...data };
+        set((s) => ({ regions: [...s.regions, newRegion] }));
+        return newRegion;
+      },
+
+      deleteRegion: (id) =>
+        set((s) => ({ regions: s.regions.filter((r) => r.id !== id) })),
+
+      // ─── Language ───────────────────────
+      addLanguage: (data) => {
+        const universeId = get().currentUniverseId || undefined;
+        const newLang: Language = { id: uid(), universeId, ...data };
+        set((s) => ({ languages: [...s.languages, newLang] }));
+        return newLang;
+      },
+
+      updateLanguage: (id, data) =>
+        set((s) => ({
+          languages: s.languages.map((l) => (l.id === id ? { ...l, ...data } : l)),
+        })),
+
+      deleteLanguage: (id) =>
+        set((s) => ({ languages: s.languages.filter((l) => l.id !== id) })),
+
       // ─── Universe-scoped Getters ─────────
       getEntitiesForCurrentUniverse: () => {
         const { entities, currentUniverseId } = get();
@@ -313,6 +351,18 @@ export const useUniverseStore = create<UniverseState>()(
         const { notes, currentUniverseId } = get();
         if (!currentUniverseId) return [];
         return notes.filter((n) => n.universeId === currentUniverseId);
+      },
+
+      getRegionsForCurrentUniverse: () => {
+        const { regions, currentUniverseId } = get();
+        if (!currentUniverseId) return [];
+        return regions.filter((r) => r.universeId === currentUniverseId);
+      },
+
+      getLanguagesForCurrentUniverse: () => {
+        const { languages, currentUniverseId } = get();
+        if (!currentUniverseId) return [];
+        return languages.filter((l) => l.universeId === currentUniverseId);
       },
     }),
     {

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useUniverseStore } from '../store/useUniverseStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { BookOpen, Users, Map, Clock, ArrowLeft, Scroll, Sparkles, ChevronRight, Globe } from 'lucide-react-native';
+import { BookOpen, Users, Map, Clock, ArrowLeft, Scroll, Sparkles, ChevronRight, Globe, Compass, Type } from 'lucide-react-native';
 import { StatCard } from '../components/StatCard';
 
 export function MainScreen() {
@@ -13,6 +13,7 @@ export function MainScreen() {
     currentUniverseId, universes, setCurrentUniverseId,
     getEntitiesForCurrentUniverse, getNotesForCurrentUniverse,
     getMythsForCurrentUniverse, getTimelineForCurrentUniverse,
+    getRegionsForCurrentUniverse, getLanguagesForCurrentUniverse,
   } = useUniverseStore();
 
   const currentUniverse = useMemo(() => universes.find((u) => u.id === currentUniverseId), [universes, currentUniverseId]);
@@ -20,6 +21,8 @@ export function MainScreen() {
   const notes = getNotesForCurrentUniverse();
   const myths = getMythsForCurrentUniverse();
   const timeline = getTimelineForCurrentUniverse();
+  const regions = getRegionsForCurrentUniverse();
+  const languages = getLanguagesForCurrentUniverse();
   const characters = entities.filter((e) => e.type === 'character');
   const places = entities.filter((e) => e.type === 'place');
 
@@ -34,6 +37,8 @@ export function MainScreen() {
   const modules = [
     { key: 'myth', label: 'Efsaneler', icon: Scroll, count: myths.length, screen: 'Mythology' },
     { key: 'time', label: 'Zaman Çizelgesi', icon: Clock, count: timeline.length, screen: 'Timeline' },
+    { key: 'maps', label: 'Harita', icon: Compass, count: regions.length, screen: 'Maps' },
+    { key: 'lang', label: 'Diller', icon: Type, count: languages.length, screen: 'Languages' },
     { key: 'lore', label: 'Lore AI', icon: Sparkles, count: null, screen: 'Lore' },
     { key: 'cosmos', label: 'Kosmos Haritası', icon: Globe, count: entities.length, screen: 'Cosmos' },
   ];

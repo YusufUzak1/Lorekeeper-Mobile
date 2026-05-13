@@ -1,23 +1,27 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList, TextInput, Alert } from 'react-native';
-import { Scroll, Trash2, Plus, Sparkles } from 'lucide-react-native';
+import { Scroll, Trash2, Edit3, ArrowLeft } from 'lucide-react-native';
 import { useUniverseStore } from '../store/useUniverseStore';
 import { EmptyState } from '../components/EmptyState';
 
 const TIER_COLORS: Record<string, string> = {
   Titan: '#C6A052', Major: '#8B5CF6', Minor: '#3B82F6', Spirit: '#06B6D4',
 };
+const TIERS = ['Titan', 'Major', 'Minor', 'Spirit'];
 
-export function MythologyScreen() {
-  const { getMythsForCurrentUniverse, addMyth, deleteMyth, currentUniverseId } = useUniverseStore();
+export function MythologyScreen({ navigation }: any) {
+  const { getMythsForCurrentUniverse, addMyth, updateMyth, deleteMyth, currentUniverseId } = useUniverseStore();
   const myths = getMythsForCurrentUniverse();
 
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [epithet, setEpithet] = useState('');
   const [tier, setTier] = useState('Major');
   const [glyph, setGlyph] = useState('⚡');
   const [desc, setDesc] = useState('');
+
+  const resetForm = () => { setName(''); setEpithet(''); setDesc(''); setGlyph('⚡'); setTier('Major'); setEditingId(null); setIsAdding(false); };
 
   const handleAdd = () => {
     if (!name.trim()) return;
@@ -26,7 +30,22 @@ export function MythologyScreen() {
       color: TIER_COLORS[tier] || '#C6A052', description: desc.trim(),
       domains: [], universeId: currentUniverseId || undefined,
     });
-    setName(''); setEpithet(''); setDesc(''); setGlyph('⚡'); setIsAdding(false);
+    resetForm();
+  };
+
+  const handleEdit = (m: any) => {
+    setEditingId(m.id); setName(m.name); setEpithet(m.epithet || '');
+    setTier(m.tier); setGlyph(m.glyph || '⚡'); setDesc(m.description || '');
+    setIsAdding(true);
+  };
+
+  const handleUpdate = () => {
+    if (!editingId || !name.trim()) return;
+    updateMyth(editingId, {
+      name: name.trim(), epithet: epithet.trim(), tier, glyph: glyph.trim() || '✦',
+      color: TIER_COLORS[tier] || '#C6A052', description: desc.trim(),
+    });
+    resetForm();
   };
 
   const handleDelete = (id: string, n: string) => {
@@ -38,19 +57,21 @@ export function MythologyScreen() {
 
   return (
     <View className="flex-1 bg-mythos-bg pt-14 px-6">
-      <View className="flex-row justify-between items-center mb-6">
-        <Text className="text-mythos-text text-3xl font-bold">Efsaneler</Text>
-        <TouchableOpacity onPress={() => { setIsAdding(!isAdding); setName(''); }} className="bg-mythos-accent/20 px-4 py-2 rounded-lg border border-mythos-accent/40">
+      <View className="flex-row items-center mb-6">
+        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3"><ArrowLeft color="#8A8A8E" size={20} /></TouchableOpacity>
+        <Text className="text-mythos-text text-3xl font-bold flex-1">Efsaneler</Text>
+        <TouchableOpacity onPress={() => { if (isAdding) resetForm(); else setIsAdding(true); }} className="bg-mythos-accent/20 px-4 py-2 rounded-lg border border-mythos-accent/40">
           <Text className="text-mythos-accent font-bold">{isAdding ? 'İptal' : 'Ekle'}</Text>
         </TouchableOpacity>
       </View>
 
       {isAdding && (
         <View className="bg-mythos-panel p-5 rounded-2xl border border-mythos-accent/30 mb-5">
+          <Text className="text-mythos-accent font-bold text-xs uppercase tracking-wider mb-3">{editingId ? '✏️ Efsane Düzenle' : '✦ Yeni Efsane'}</Text>
           <TextInput className="bg-black/30 border border-white/10 rounded-xl p-3 text-white mb-3" placeholder="İsim *" placeholderTextColor="#8A8A8E" value={name} onChangeText={setName} />
           <TextInput className="bg-black/30 border border-white/10 rounded-xl p-3 text-white mb-3" placeholder="Lakap (ör: Fırtına Tanrısı)" placeholderTextColor="#8A8A8E" value={epithet} onChangeText={setEpithet} />
           <View className="flex-row bg-black/25 rounded-xl border border-white/10 p-1 mb-3">
-            {['Titan', 'Major', 'Minor', 'Spirit'].map((t) => (
+            {TIERS.map((t) => (
               <TouchableOpacity key={t} className={`flex-1 py-2 items-center rounded-lg ${tier === t ? 'bg-mythos-accent/20 border border-mythos-accent/40' : ''}`} onPress={() => setTier(t)}>
                 <Text className={tier === t ? 'text-mythos-accent font-bold text-xs' : 'text-white/60 text-xs'}>{t}</Text>
               </TouchableOpacity>
@@ -58,8 +79,8 @@ export function MythologyScreen() {
           </View>
           <TextInput className="bg-black/30 border border-white/10 rounded-xl p-3 text-white mb-3" placeholder="Sembol (emoji: ⚡🔥🌊)" placeholderTextColor="#8A8A8E" value={glyph} onChangeText={setGlyph} />
           <TextInput className="bg-black/30 border border-white/10 rounded-xl p-3 text-white mb-4 h-20" placeholder="Açıklama" placeholderTextColor="#8A8A8E" multiline textAlignVertical="top" value={desc} onChangeText={setDesc} />
-          <TouchableOpacity className="bg-mythos-accent/80 p-3 rounded-xl items-center" onPress={handleAdd}>
-            <Text className="text-black font-bold uppercase">Oluştur</Text>
+          <TouchableOpacity className="bg-mythos-accent/80 p-3 rounded-xl items-center" onPress={editingId ? handleUpdate : handleAdd}>
+            <Text className="text-black font-bold uppercase">{editingId ? 'Güncelle' : 'Oluştur'}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -84,9 +105,10 @@ export function MythologyScreen() {
                   </View>
                   <View className="flex-row items-center gap-2">
                     <View className="px-2 py-1 rounded-full" style={{ backgroundColor: tierColor + '20' }}>
-                      <Text style={{ color: tierColor, fontSize: 11, fontWeight: '700' }}>{item.tier}</Text>
+                      <Text style={{ color: tierColor, fontSize: 11, fontWeight: '700' as const }}>{item.tier}</Text>
                     </View>
-                    <TouchableOpacity onPress={() => handleDelete(item.id, item.name)} className="p-1"><Trash2 color="#EF4444" size={16} /></TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleEdit(item)} className="p-1"><Edit3 color="#C6A052" size={14} /></TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDelete(item.id, item.name)} className="p-1"><Trash2 color="#EF4444" size={14} /></TouchableOpacity>
                   </View>
                 </View>
                 {item.description ? <Text className="text-mythos-text/70 text-sm mt-3 leading-5">{item.description}</Text> : null}
