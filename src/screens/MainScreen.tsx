@@ -1,20 +1,23 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useUniverseStore } from '../store/useUniverseStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { BookOpen, Users, Map, Clock, ArrowLeft, Scroll, Sparkles, ChevronRight, Globe, Compass, Type } from 'lucide-react-native';
 import { StatCard } from '../components/StatCard';
+import { fetchStateFromCloud } from '../services/syncService';
 
 export function MainScreen() {
   const navigation = useNavigation<any>();
   const { userEmail, isGuest } = useAuthStore();
   const {
-    currentUniverseId, universes, setCurrentUniverseId,
+    currentUniverseId, universes, setCurrentUniverseId, replaceState,
     getEntitiesForCurrentUniverse, getNotesForCurrentUniverse,
     getMythsForCurrentUniverse, getTimelineForCurrentUniverse,
     getRegionsForCurrentUniverse, getLanguagesForCurrentUniverse,
   } = useUniverseStore();
+
+  const [refreshing, setRefreshing] = useState(false);
 
   const currentUniverse = useMemo(() => universes.find((u) => u.id === currentUniverseId), [universes, currentUniverseId]);
   const entities = getEntitiesForCurrentUniverse();
@@ -43,8 +46,34 @@ export function MainScreen() {
     { key: 'cosmos', label: 'Kosmos Haritası', icon: Globe, count: entities.length, screen: 'Cosmos' },
   ];
 
+  const onRefresh = useCallback(async () => {
+    if (isGuest) return;
+    setRefreshing(true);
+    try {
+      const data = await fetchStateFromCloud();
+      if (data) replaceState(data);
+    } catch (err: any) {
+      Alert.alert('Sync Hatası', err.message || 'Buluttan veri çekilemedi.');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [isGuest, replaceState]);
+
   return (
-    <ScrollView className="flex-1 bg-mythos-bg pt-14 px-6">
+    <ScrollView
+      className="flex-1 bg-mythos-bg pt-14 px-6"
+      refreshControl={
+        !isGuest ? (
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#C6A052"
+            colors={['#C6A052']}
+            progressBackgroundColor="#1a1a1e"
+          />
+        ) : undefined
+      }
+    >
       <View className="flex-row items-center justify-between mb-2">
         <TouchableOpacity onPress={() => setCurrentUniverseId(null)} className="flex-row items-center">
           <ArrowLeft color="#8A8A8E" size={20} />
@@ -60,6 +89,13 @@ export function MainScreen() {
           <Text className="text-mythos-text/80 text-sm leading-5">{currentUniverse.summary}</Text>
         </View>
       ) : null}
+
+      {/* Pull hint for non-guest users */}
+      {!isGuest && (
+        <View className="bg-mythos-accent/5 border border-mythos-accent/10 rounded-lg px-3 py-2 mb-4">
+          <Text className="text-mythos-accent/60 text-[10px] text-center">↓ Aşağı çekerek buluttan senkronize et</Text>
+        </View>
+      )}
 
       {/* Stats */}
       <Text className="text-mythos-text font-bold text-lg mb-3">Genel Bakış</Text>

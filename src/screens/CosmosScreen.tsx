@@ -143,6 +143,10 @@ export function CosmosScreen() {
     return conn.sourceId !== selectedEntity.id && conn.targetId !== selectedEntity.id;
   };
 
+  const selectedConnCount = selectedEntity
+    ? connections.filter(c => c.sourceId === selectedEntity.id || c.targetId === selectedEntity.id).length
+    : 0;
+
   return (
     <View className="flex-1 bg-mythos-bg">
       <View className="absolute top-14 left-6 z-10 flex-row justify-between right-6">
@@ -151,6 +155,24 @@ export function CosmosScreen() {
         </TouchableOpacity>
         <Text className="text-mythos-text font-bold text-xl pt-1">Kosmos Haritası</Text>
         <View className="w-10" />
+      </View>
+
+      {/* Legend */}
+      <View className="absolute top-28 left-6 z-10 bg-black/60 rounded-xl border border-white/10 p-3">
+        <Text className="text-white/40 text-[9px] uppercase tracking-wider mb-2 font-bold">Tip Renkleri</Text>
+        {[
+          { type: 'character', label: 'Karakter', color: '#8B5CF6' },
+          { type: 'place', label: 'Mekan', color: '#10B981' },
+          { type: 'event', label: 'Olay', color: '#F59E0B' },
+        ].map(t => (
+          <View key={t.type} className="flex-row items-center mb-1">
+            <View className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: t.color }} />
+            <Text className="text-white/60 text-[10px]">{t.label}</Text>
+          </View>
+        ))}
+        <View className="border-t border-white/10 mt-2 pt-2">
+          <Text className="text-white/30 text-[9px]">{entities.length} varlık · {connections.length} bağlantı</Text>
+        </View>
       </View>
 
       {/* 3D Canvas */}
@@ -169,11 +191,22 @@ export function CosmosScreen() {
       {/* Seçili Entity Overlay */}
       {selectedEntity && (
         <View className="absolute bottom-10 left-6 right-6 bg-mythos-panel p-5 rounded-2xl border border-mythos-accent/40 z-10">
-          <Text className="text-white font-bold text-xl mb-1">{selectedEntity.name}</Text>
-          <Text className="text-mythos-accent text-sm mb-3">
-            {selectedEntity.type === 'character' ? 'Karakter' : selectedEntity.type === 'place' ? 'Mekan' : 'Olay'}
-            {selectedEntity.era ? ` · ${selectedEntity.era}` : ''}
-          </Text>
+          <View className="flex-row items-start justify-between mb-2">
+            <View className="flex-1 mr-3">
+              <Text className="text-white font-bold text-xl">{selectedEntity.name}</Text>
+              <Text className="text-mythos-accent text-sm">
+                {selectedEntity.type === 'character' ? 'Karakter' : selectedEntity.type === 'place' ? 'Mekan' : 'Olay'}
+                {selectedEntity.era ? ` · ${selectedEntity.era}` : ''}
+                {` · ${selectedConnCount} bağlantı`}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => setSelectedEntity(null)} className="p-1 bg-white/10 rounded-full">
+              <Text className="text-white/60 text-xs px-1">✕</Text>
+            </TouchableOpacity>
+          </View>
+          {selectedEntity.description ? (
+            <Text className="text-white/50 text-xs mb-3 leading-4" numberOfLines={2}>{selectedEntity.description}</Text>
+          ) : null}
           <TouchableOpacity 
             className="bg-mythos-accent/20 p-3 rounded-xl items-center border border-mythos-accent/30"
             onPress={() => navigation.navigate('EntitiesTab', { screen: 'EntityDetail', params: { entityId: selectedEntity.id }})}

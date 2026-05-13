@@ -1,16 +1,18 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Home, BookOpen, Users, Settings } from 'lucide-react-native';
+import { Home, BookOpen, Users, Settings, Search } from 'lucide-react-native';
 
 import { DashboardStack } from './DashboardStack';
 import { EntitiesStack } from './EntitiesStack';
 import { NotesScreen } from '../screens/NotesScreen';
+import { GlobalSearchScreen } from '../screens/GlobalSearchScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 
 type TabParamList = {
   DashboardTab: undefined;
   EntitiesTab: undefined;
   Notes: undefined;
+  SearchTab: undefined;
   Settings: undefined;
 };
 
@@ -65,6 +67,16 @@ export function MainNavigator(): React.JSX.Element {
             <BookOpen color={color} size={size} />
           ),
           tabBarLabel: 'Notlar',
+        }}
+      />
+      <Tab.Screen
+        name="SearchTab"
+        component={GlobalSearchScreen}
+        options={{
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+            <Search color={color} size={size} />
+          ),
+          tabBarLabel: 'Ara',
         }}
       />
       <Tab.Screen
