@@ -13,6 +13,7 @@ import { UniverseSelectScreen } from './src/screens/UniverseSelectScreen';
 import { MainNavigator } from './src/navigation/MainNavigator';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useUniverseStore } from './src/store/useUniverseStore';
+import { fetchStateFromCloud } from './src/services/syncService';
 
 Amplify.configure({
   Auth: {
@@ -45,8 +46,8 @@ const DarkTheme: Theme = {
 };
 
 export default function App() {
-  const { isAuthenticated, login, logout } = useAuthStore();
-  const { currentUniverseId } = useUniverseStore();
+  const { isAuthenticated, isGuest, login, logout } = useAuthStore();
+  const { currentUniverseId, replaceState } = useUniverseStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -55,6 +56,18 @@ export default function App() {
         const user = await getCurrentUser();
         const email = user.signInDetails?.loginId ?? user.username;
         login(email);
+
+        // Giriş başarılı — buluttan otomatik veri çek
+        try {
+          const cloudData = await fetchStateFromCloud();
+          if (cloudData) {
+            replaceState(cloudData);
+            console.log('[AutoSync] Buluttan veri başarıyla çekildi.');
+          }
+        } catch (syncErr) {
+          console.warn('[AutoSync] Bulut senkronizasyonu başarısız:', syncErr);
+          // Sync hatası login'i engellemez — yerel veriyle devam
+        }
       } catch {
         logout();
       } finally {
@@ -63,7 +76,7 @@ export default function App() {
     };
 
     syncAuthSession();
-  }, [login, logout]);
+  }, [login, logout, replaceState]);
 
   if (isInitializing) {
     return (
