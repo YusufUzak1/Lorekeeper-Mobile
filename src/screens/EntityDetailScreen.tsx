@@ -1,17 +1,22 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { ArrowLeft, Users, Map, Zap, Link, Trash2, Edit3 } from 'lucide-react-native';
+import { ArrowLeft, Users, Map, Zap, Link, Trash2, Edit3, Plus } from 'lucide-react-native';
 import { useUniverseStore } from '../store/useUniverseStore';
+import { EditEntityModal } from '../components/EditEntityModal';
+import { AddConnectionModal } from '../components/AddConnectionModal';
 
-const TYPE_ICONS = { character: Users, place: Map, event: Zap };
+const TYPE_ICONS: Record<string, any> = { character: Users, place: Map, event: Zap };
 const TYPE_LABELS: Record<string, string> = { character: 'Karakter', place: 'Mekan', event: 'Olay' };
 
 export function EntityDetailScreen({ route, navigation }: any) {
   const entityId = route?.params?.entityId as string;
-  const { getEntityById, getConnectionsForEntity, entities, deleteEntity } = useUniverseStore();
+  const { getEntityById, getConnectionsForEntity, entities, deleteEntity, deleteConnection } = useUniverseStore();
 
   const entity = getEntityById(entityId);
   const connections = getConnectionsForEntity(entityId);
+
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [connectionModalVisible, setConnectionModalVisible] = useState(false);
 
   const connectedEntities = useMemo(() => {
     return connections.map((c) => {
@@ -43,6 +48,13 @@ export function EntityDetailScreen({ route, navigation }: any) {
     ]);
   };
 
+  const handleDeleteConnection = (connId: string, otherName: string) => {
+    Alert.alert('Bağlantıyı Sil', `"${otherName}" ile bağlantı silinsin mi?`, [
+      { text: 'İptal', style: 'cancel' },
+      { text: 'Sil', style: 'destructive', onPress: () => deleteConnection(connId) },
+    ]);
+  };
+
   return (
     <ScrollView className="flex-1 bg-mythos-bg pt-14 px-6">
       {/* Header */}
@@ -52,8 +64,11 @@ export function EntityDetailScreen({ route, navigation }: any) {
           <Text className="text-mythos-muted ml-1">Geri</Text>
         </TouchableOpacity>
         <View className="flex-row gap-2">
-          <TouchableOpacity onPress={handleDelete} className="p-2">
-            <Trash2 color="#EF4444" size={20} />
+          <TouchableOpacity onPress={() => setEditModalVisible(true)} className="p-2 bg-mythos-accent/15 rounded-lg">
+            <Edit3 color="#C6A052" size={18} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleDelete} className="p-2 bg-red-500/15 rounded-lg">
+            <Trash2 color="#EF4444" size={18} />
           </TouchableOpacity>
         </View>
       </View>
@@ -102,11 +117,24 @@ export function EntityDetailScreen({ route, navigation }: any) {
         )}
       </View>
 
-      {/* Connections */}
-      <Text className="text-mythos-text font-bold text-lg mb-3">
-        <Link color="#C6A052" size={16} /> Bağlantılar ({connectedEntities.length})
-      </Text>
+      {/* Connections Header */}
+      <View className="flex-row items-center justify-between mb-3">
+        <View className="flex-row items-center gap-2">
+          <Link color="#C6A052" size={16} />
+          <Text className="text-mythos-text font-bold text-lg">
+            Bağlantılar ({connectedEntities.length})
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => setConnectionModalVisible(true)}
+          className="flex-row items-center gap-1 bg-mythos-accent/15 px-3 py-2 rounded-lg border border-mythos-accent/30"
+        >
+          <Plus color="#C6A052" size={14} />
+          <Text className="text-mythos-accent text-xs font-bold">Ekle</Text>
+        </TouchableOpacity>
+      </View>
 
+      {/* Connections List */}
       {connectedEntities.length > 0 ? (
         <View className="mb-10">
           {connectedEntities.map(({ connection, entity: other }) => {
@@ -125,20 +153,51 @@ export function EntityDetailScreen({ route, navigation }: any) {
                   <Text className="text-white font-medium">{other.name}</Text>
                   <Text className="text-mythos-muted text-xs">{TYPE_LABELS[other.type]}</Text>
                 </View>
-                <View className="px-2 py-1 rounded-full" style={{ backgroundColor: relColor[connection.relation] + '20' }}>
-                  <Text style={{ color: relColor[connection.relation], fontSize: 11, fontWeight: '600' }}>
-                    {relLabel[connection.relation] || connection.relation}
-                  </Text>
+                <View className="flex-row items-center gap-2">
+                  <View className="px-2 py-1 rounded-full" style={{ backgroundColor: relColor[connection.relation] + '20' }}>
+                    <Text style={{ color: relColor[connection.relation], fontSize: 11, fontWeight: '600' as const }}>
+                      {relLabel[connection.relation] || connection.relation}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteConnection(connection.id, other.name)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    className="p-1"
+                  >
+                    <Trash2 color="#EF444480" size={14} />
+                  </TouchableOpacity>
                 </View>
               </TouchableOpacity>
             );
           })}
         </View>
       ) : (
-        <View className="py-6 items-center mb-10">
-          <Text className="text-mythos-muted text-sm">Henüz bağlantı yok.</Text>
+        <View className="py-6 items-center mb-10 bg-mythos-panel/50 rounded-xl border border-dashed border-white/10">
+          <Link color="#8A8A8E" size={24} />
+          <Text className="text-mythos-muted text-sm mt-2">Henüz bağlantı yok.</Text>
+          <TouchableOpacity
+            onPress={() => setConnectionModalVisible(true)}
+            className="mt-3 flex-row items-center gap-1 bg-mythos-accent/15 px-4 py-2 rounded-lg"
+          >
+            <Plus color="#C6A052" size={14} />
+            <Text className="text-mythos-accent text-xs font-bold">İlk Bağlantıyı Ekle</Text>
+          </TouchableOpacity>
         </View>
       )}
+
+      {/* Edit Modal */}
+      <EditEntityModal
+        visible={editModalVisible}
+        onClose={() => setEditModalVisible(false)}
+        entity={entity}
+      />
+
+      {/* Add Connection Modal */}
+      <AddConnectionModal
+        visible={connectionModalVisible}
+        onClose={() => setConnectionModalVisible(false)}
+        sourceEntityId={entityId}
+      />
     </ScrollView>
   );
 }
