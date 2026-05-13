@@ -30,10 +30,14 @@ export function AuthScreen() {
     setLoading(true);
     setError(null);
     try {
-      await signIn({ username: email.trim(), password });
+      console.log('Login attempt with:', email.trim());
+      const response = await signIn({ username: email.trim(), password });
+      console.log('Login success:', response);
       login(email.trim());
     } catch (err: any) {
-      setError(err.message || 'Giriş yapılamadı.');
+      console.error('Login error full object:', err);
+      // Hatanın tam içeriğini UI'da da gösterelim ki kullanıcı bana söyleyebilsin
+      setError(err?.message ? err.message : JSON.stringify(err));
     } finally {
       setLoading(false);
     }

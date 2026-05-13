@@ -1,4 +1,5 @@
 import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
 import './global.css';
 import { NavigationContainer, Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -15,11 +16,17 @@ import { useAuthStore } from './src/store/useAuthStore';
 import { useUniverseStore } from './src/store/useUniverseStore';
 import { fetchStateFromCloud } from './src/services/syncService';
 
+const userPoolId = process.env.EXPO_PUBLIC_COGNITO_USER_POOL_ID || '';
+const userPoolClientId = process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID || '';
+
+console.log('[Amplify Config] Pool ID:', userPoolId ? 'Yüklendi' : 'Eksik!');
+console.log('[Amplify Config] Client ID:', userPoolClientId ? 'Yüklendi' : 'Eksik!');
+
 Amplify.configure({
   Auth: {
     Cognito: {
-      userPoolId: process.env.EXPO_PUBLIC_COGNITO_USER_POOL_ID || '',
-      userPoolClientId: process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID || '',
+      userPoolId,
+      userPoolClientId,
     },
   },
 });
