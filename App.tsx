@@ -14,26 +14,28 @@ import { UniverseSelectScreen } from './src/screens/UniverseSelectScreen';
 import { MainNavigator } from './src/navigation/MainNavigator';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useUniverseStore } from './src/store/useUniverseStore';
-import { fetchStateFromCloud } from './src/services/syncService';
+import { pullCloudStateAfterAuth } from './src/services/cloudSyncAfterAuth';
 
-const userPoolId = process.env.EXPO_PUBLIC_COGNITO_USER_POOL_ID || '';
-const userPoolClientId = process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID || '';
+const userPoolId = process.env.EXPO_PUBLIC_COGNITO_USER_POOL_ID ?? '';
+const userPoolClientId = process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID ?? '';
 
-console.log('[Amplify Config] Pool ID:', userPoolId ? 'Yüklendi' : 'Eksik!');
-console.log('[Amplify Config] Client ID:', userPoolClientId ? 'Yüklendi' : 'Eksik!');
-
-Amplify.configure({
-  Auth: {
-    Cognito: {
-      userPoolId,
-      userPoolClientId,
+if (userPoolId && userPoolClientId) {
+  Amplify.configure({
+    Auth: {
+      Cognito: {
+        userPoolId,
+        userPoolClientId,
+      },
     },
-  },
-});
+  });
+} else {
+  console.warn(
+    '[Lorekeeper] EXPO_PUBLIC_COGNITO_USER_POOL_ID ve EXPO_PUBLIC_COGNITO_CLIENT_ID tanımlı değil; kimlik doğrulama çalışmayabilir.'
+  );
+}
 
 const Stack = createNativeStackNavigator();
 
-// Koyu tema navigasyon ayarları
 const DarkTheme: Theme = {
   dark: true,
   colors: {
@@ -49,52 +51,49 @@ const DarkTheme: Theme = {
     medium: { fontFamily: '', fontWeight: 'normal' },
     bold: { fontFamily: '', fontWeight: 'bold' },
     heavy: { fontFamily: '', fontWeight: 'bold' },
-  }
+  },
 };
 
 export default function App() {
-  const { isAuthenticated, isGuest, login, logout } = useAuthStore();
-  const { currentUniverseId, replaceState } = useUniverseStore();
+  const { isAuthenticated, login, logout } = useAuthStore();
+  const { currentUniverseId } = useUniverseStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     const syncAuthSession = async () => {
       try {
         const user = await getCurrentUser();
+        if (cancelled) return;
         const email = user.signInDetails?.loginId ?? user.username;
         login(email);
-
-        // Giriş başarılı — buluttan otomatik veri çek
-        try {
-          const cloudData = await fetchStateFromCloud();
-          if (cloudData) {
-            replaceState(cloudData);
-            console.log('[AutoSync] Buluttan veri başarıyla çekildi.');
-          }
-        } catch (syncErr) {
-          console.warn('[AutoSync] Bulut senkronizasyonu başarısız:', syncErr);
-          // Sync hatası login'i engellemez — yerel veriyle devam
-        }
+        void pullCloudStateAfterAuth().catch(() => {});
       } catch {
-        logout();
+        if (!cancelled) {
+          logout();
+        }
       } finally {
-        setIsInitializing(false);
+        if (!cancelled) {
+          setIsInitializing(false);
+        }
       }
     };
 
-    syncAuthSession();
-  }, [login, logout, replaceState]);
+    void syncAuthSession();
+    return () => {
+      cancelled = true;
+    };
+  }, [login, logout]);
 
   if (isInitializing) {
     return (
-      <View className="flex-1 justify-center items-center bg-mythos-bg">
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0F0F11' }}>
         <ActivityIndicator size="large" color="#C6A052" />
-        <StatusBar style="light" />
       </View>
     );
   }
 
-  // Akış: Auth → Evren Seçimi → Dashboard
   const getActiveScreen = () => {
     if (!isAuthenticated) return 'Auth';
     if (!currentUniverseId) return 'UniverseSelect';
@@ -106,15 +105,11 @@ export default function App() {
   return (
     <NavigationContainer theme={DarkTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {activeScreen === 'Auth' && (
-          <Stack.Screen name="Auth" component={AuthScreen} />
-        )}
+        {activeScreen === 'Auth' && <Stack.Screen name="Auth" component={AuthScreen} />}
         {activeScreen === 'UniverseSelect' && (
           <Stack.Screen name="UniverseSelect" component={UniverseSelectScreen} />
         )}
-        {activeScreen === 'Main' && (
-          <Stack.Screen name="Main" component={MainNavigator} />
-        )}
+        {activeScreen === 'Main' && <Stack.Screen name="Main" component={MainNavigator} />}
       </Stack.Navigator>
       <StatusBar style="light" />
     </NavigationContainer>

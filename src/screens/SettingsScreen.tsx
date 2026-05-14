@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { useUniverseStore } from '../store/useUniverseStore';
 import { signOut } from 'aws-amplify/auth';
 import { LogOut, User, Cloud, Globe, RefreshCw, CloudDownload, CloudUpload, CheckCircle, AlertCircle, Clock } from 'lucide-react-native';
+import { buildCloudSyncPayload, sanitizeCloudState } from '../lib/syncPayload';
 import { fetchStateFromCloud, syncStateToCloud } from '../services/syncService';
 
 export function SettingsScreen() {
@@ -51,7 +52,7 @@ export function SettingsScreen() {
           try {
             const data = await fetchStateFromCloud();
             if (data) {
-              replaceState(data);
+              replaceState(sanitizeCloudState(data));
               setLastSyncTime(new Date().toLocaleTimeString('tr-TR'));
               setLastSyncStatus('success');
               setLastSyncMessage(`${data.entities?.length || 0} varlık, ${data.notes?.length || 0} not çekildi`);
@@ -76,7 +77,7 @@ export function SettingsScreen() {
     if (isGuest) { Alert.alert('Uyarı', 'Misafir hesapla bulut senkronizasyonu yapılamaz.'); return; }
     setSyncing(true);
     try {
-      const payload = { universes, entities, connections, myths, timeline, regions, languages, notes };
+      const payload = buildCloudSyncPayload(() => useUniverseStore.getState() as Record<string, unknown>);
       await syncStateToCloud(payload);
       setLastSyncTime(new Date().toLocaleTimeString('tr-TR'));
       setLastSyncStatus('success');
